@@ -1,0 +1,399 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Funzioni helper
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidAudio() {
+      return request.resource.contentType.matches('audio/.*');
+    }
+
+    function isValidVideo() {
+      return request.resource.contentType.matches('video/.*');
+    }
+
+    function isValidMedia() {
+      return request.resource.contentType.matches('image/.*|video/.*|audio/.*');
+    }
+
+    function isParticipant(chatId, chatType) {
+      let collectionName = 
+        chatType == 'group' ? 'groupChats' :
+        chatType == 'service' ? 'serviceChats' : 'chats';
+      let path = /databases/(default)/documents/$(collectionName)/$(chatId);
+      let exists = exists(path);
+      let chatDoc = exists ? get(path) : null;
+      let hasParticipants = chatDoc != null && 'participants' in chatDoc.data;
+      let isParticipant = hasParticipants && request.auth.uid in chatDoc.data.participants;
+      return exists && hasParticipants && isParticipant;
+    }
+
+    function isServiceProvider(chatId) {
+      let path = /databases/(default)/documents/serviceChats/$(chatId);
+      let chatDoc = get(path);
+      return request.auth.uid == chatDoc.data.serviceProviderId;
+    }
+
+    function getChatData(chatId) {
+      return get(/databases/(default)/documents/chats/$(chatId)).data;
+    }
+
+    function isChatParticipant(chatId) {
+      let chatData = getChatData(chatId);
+      return chatData != null && 
+             chatData.participants != null && 
+             request.auth.uid in chatData.participants;
+    }
+
+    function isValidContentType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('video/.*') ||
+             request.resource.contentType.matches('audio/.*') ||
+             request.resource.contentType.matches('application/.*');
+    }
+
+    function isValidFileSize() {
+      return request.resource.size < 100 * 1024 * 1024; // 100MB max
+    }
+
+    function getChatParticipants(chatId) {
+      let chatDoc = get(/databases/(default)/documents/chats/$(chatId));
+      return chatDoc.data.participants;
+    }
+
+    // Regola generale per la lettura
+    match /{allPaths=**} {
+      allow read: if isAuthenticated();
+    }
+
+    // Regole per le thumbnails
+    match /thumbnails/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() 
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 5 * 1024 * 1024;
+    }
+
+    // Regole per le foto profilo
+    match /profile_photos/{fileName} {
+      allow read: if true;
+      allow write, delete: if isAuthenticated() 
+        && (
+          (request.resource != null 
+            && isValidImage()
+            && request.resource.size <= 5 * 1024 * 1024
+            && request.resource.metadata.userId == request.auth.uid)
+          || (resource != null 
+              && resource.metadata.userId == request.auth.uid)
+        );
+    }
+
+    // Regole per i post degli utenti
+    match /users/{userId}/posts/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 10 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per i video degli utenti
+    match /videos/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && isValidVideo()
+        && request.resource.size <= 100 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per i video nella cartella utente
+    match /users/{userId}/videos/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && isValidVideo()
+        && request.resource.size <= 100 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per le raccolte degli utenti
+    match /users/{userId}/collections/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 10 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Chat dirette
+    match /chats/{chatId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && isParticipant(chatId, 'direct')
+        && request.resource != null
+        && (
+          (isValidImage() && request.resource.size <= 20 * 1024 * 1024) ||
+          (isValidVideo() && request.resource.size <= 100 * 1024 * 1024) ||
+          (isValidAudio() && request.resource.size <= 10 * 1024 * 1024) ||
+          (request.resource.size <= 50 * 1024 * 1024)
+        );
+      allow delete: if isAuthenticated() 
+        && isParticipant(chatId, 'direct');
+    }
+
+    // Chat di gruppo
+    match /groupChats/{chatId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && isParticipant(chatId, 'group')
+        && request.resource != null
+        && (
+          (isValidImage() && request.resource.size <= 20 * 1024 * 1024) ||
+          (isValidVideo() && request.resource.size <= 100 * 1024 * 1024) ||
+          (isValidAudio() && request.resource.size <= 10 * 1024 * 1024) ||
+          (request.resource.size <= 50 * 1024 * 1024)
+        );
+      allow delete: if isAuthenticated() 
+        && isParticipant(chatId, 'group');
+    }
+
+    // Chat dei servizi
+    match /serviceChats/{chatId}/{fileName} {
+      allow read: if isAuthenticated() 
+        && (isParticipant(chatId, 'service') || isServiceProvider(chatId));
+      allow create, update: if isAuthenticated() 
+        && (isParticipant(chatId, 'service') || isServiceProvider(chatId))
+        && request.resource != null
+        && (
+          (isValidImage() && request.resource.size <= 20 * 1024 * 1024) ||
+          (isValidVideo() && request.resource.size <= 100 * 1024 * 1024) ||
+          (isValidAudio() && request.resource.size <= 10 * 1024 * 1024) ||
+          (request.resource.size <= 50 * 1024 * 1024) ||
+          (request.resource.size <= 10 * 1024 * 1024)
+        );
+      allow delete: if isAuthenticated() 
+        && (isParticipant(chatId, 'service') || isServiceProvider(chatId));
+    }
+
+    // File dei servizi
+    match /services/{serviceId}/{mediaType}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && isOwner(serviceId)
+        && request.resource != null
+        && (
+          (mediaType == 'images' && isValidImage() && request.resource.size <= 20 * 1024 * 1024) ||
+          (mediaType == 'documents' && request.resource.size <= 10 * 1024 * 1024) ||
+          (mediaType == 'certificates' && request.resource.size <= 5 * 1024 * 1024)
+        );
+      allow delete: if isAuthenticated() && isOwner(serviceId);
+    }
+
+    // Regole per i file temporanei
+    match /temp/{userId}/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && request.resource.size <= 100 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per le miniature dei video
+    match /video_thumbnails/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() 
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 5 * 1024 * 1024;
+    }
+
+    // Regole per i file audio
+    match /audio/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && isValidAudio()
+        && request.resource.size <= 10 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per i documenti degli utenti
+    match /users/{userId}/documents/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && request.resource.size <= 10 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per le storie
+    match /stories/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && (isValidImage() || isValidVideo())
+        && request.resource.size <= 50 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Regole per le immagini
+    match /images/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 20 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per i video
+    match /videos/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && request.resource != null
+        && isValidVideo()
+        && request.resource.size <= 100 * 1024 * 1024;
+      allow delete: if isAuthenticated() 
+        && request.resource.metadata.userId == request.auth.uid;
+    }
+
+    // Regole per i file generici
+    match /files/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && request.resource.size <= 50 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per le immagini temporanee
+    match /temp_images/{fileName} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() 
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 20 * 1024 * 1024;
+      allow delete: if isAuthenticated() 
+        && request.resource.metadata.userId == request.auth.uid;
+    }
+
+    // Regole per i video temporanei
+    match /temp_videos/{fileName} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() 
+        && request.resource != null
+        && isValidVideo()
+        && request.resource.size <= 100 * 1024 * 1024;
+      allow delete: if isAuthenticated() 
+        && request.resource.metadata.userId == request.auth.uid;
+    }
+
+    // Regole per le immagini compresse
+    match /compressed_images/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 5 * 1024 * 1024;
+      allow delete: if isAuthenticated() 
+        && request.resource.metadata.userId == request.auth.uid;
+    }
+
+    // Regole per i video compressi
+    match /compressed_videos/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && request.resource != null
+        && isValidVideo()
+        && request.resource.size <= 20 * 1024 * 1024;
+      allow delete: if isAuthenticated() 
+        && request.resource.metadata.userId == request.auth.uid;
+    }
+
+    // Regole per le anteprime delle immagini
+    match /image_previews/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() 
+        && request.resource != null
+        && isValidImage()
+        && request.resource.size <= 1 * 1024 * 1024;
+      allow delete: if isAuthenticated() 
+        && request.resource.metadata.userId == request.auth.uid;
+    }
+
+    // Regole per i file condivisi
+    match /shared_files/{fileId} {
+      allow read: if isAuthenticated() 
+        && (request.auth.uid in resource.metadata.allowedUsers 
+            || resource.metadata.isPublic == 'true');
+      allow create: if isAuthenticated() 
+        && request.resource != null
+        && request.resource.size <= 100 * 1024 * 1024;
+      allow delete: if isAuthenticated() 
+        && request.resource.metadata.userId == request.auth.uid;
+    }
+
+    // Regole per i backup delle chat
+    match /chat_backups/{userId}/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource != null
+        && request.resource.size <= 100 * 1024 * 1024;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Regole per i file di sistema
+    match /system/{fileName} {
+      allow read: if true;
+      allow write, delete: if false; // Solo admin tramite Firebase Admin SDK
+    }
+
+    // Regole per i messaggi della chat
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if isAuthenticated() && isChatParticipant(chatId);
+      allow delete: if isAuthenticated() && (
+        isChatParticipant(chatId) || 
+        resource.metadata.senderId == request.auth.uid
+      );
+    }
+
+    // Media delle chat
+    match /chats/{chatId}/media/{fileName} {
+      allow read: if isAuthenticated() && isChatParticipant(chatId);
+      allow create, update: if isAuthenticated() && 
+                     isChatParticipant(chatId) &&
+                     isValidContentType() &&
+                     isValidFileSize() &&
+                     request.resource.metadata.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && (
+        isChatParticipant(chatId) ||
+        resource.metadata.userId == request.auth.uid
+      );
+    }
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "project_info": {
+    "project_number": "693837443791",
+    "firebase_url": "https://criptax-8d87d-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "criptax-8d87d",
+    "storage_bucket": "criptax-8d87d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693837443791:android:cf4384b74c7df5a7e6bdba",
+        "android_client_info": {
+          "package_name": "com.criptax.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "693837443791-qshskohcsok64vd50tr0o8i80kbp7fpj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.criptax.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu1LwJgGYjKtVrf1bi2p52pc6u-Vr62aE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "693837443791-u5rkn64bd9mebp54h936aigr3b9nsb9v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.criptx.criptax"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693837443791:android:82d34c5248229e72e6bdba",
+        "android_client_info": {
+          "package_name": "com.criptax.private"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu1LwJgGYjKtVrf1bi2p52pc6u-Vr62aE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "693837443791-u5rkn64bd9mebp54h936aigr3b9nsb9v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.criptx.criptax"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693837443791:android:59d4cb225aa40519e6bdba",
+        "android_client_info": {
+          "package_name": "com.criptx.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu1LwJgGYjKtVrf1bi2p52pc6u-Vr62aE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "693837443791-u5rkn64bd9mebp54h936aigr3b9nsb9v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.criptx.criptax"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693837443791:android:2466b9365303d66fe6bdba",
+        "android_client_info": {
+          "package_name": "com.criptx.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "693837443791-ciq42i8kq6uao3nnl92hh6pnbcsisol7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.criptx.mobile",
+            "certificate_hash": "84f29b179e5658b8c76accd11bc08c1809b265fe"
+          }
+        },
+        {
+          "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu1LwJgGYjKtVrf1bi2p52pc6u-Vr62aE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "693837443791-8d9tbfd9kmpkv30s1ahmup7qu2d6s25i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "693837443791-u5rkn64bd9mebp54h936aigr3b9nsb9v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.criptx.criptax"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
